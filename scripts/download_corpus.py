@@ -25,7 +25,7 @@ def main() -> None:
         for d in docs:
             dest = RAW / d["file"]
             if dest.exists():
-                print(f"  ✓ {d['file']} (already present)")
+                print(f"  OK  {d['file']} (already present)")
                 continue
             url = d.get("url")
             if not url:
@@ -37,15 +37,15 @@ def main() -> None:
                 if not r.content.startswith(b"%PDF"):
                     raise ValueError("response is not a PDF")
                 dest.write_bytes(r.content)
-                print(f"  ✓ {d['file']} ({len(r.content) / 1e6:.1f} MB)")
+                print(f"  OK  {d['file']} ({len(r.content) / 1e6:.1f} MB)")
             except Exception as e:  # noqa: BLE001
-                print(f"  ✗ {d['file']}: {e}")
+                print(f"  FAIL {d['file']}: {e}")
                 manual.append(d)
 
     if manual:
         print("\nSave these manually into data/raw/ (exact file name on the left):")
         for d in manual:
-            print(f"  {d['file']:<26} ← {d['page']}")
+            print(f"  {d['file']:<26} <- {d['page']}")
     print(f"\nPDFs in data/raw: {len(list(RAW.glob('*.pdf')))}")
 
 

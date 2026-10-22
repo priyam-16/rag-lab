@@ -20,6 +20,6 @@ if __name__ == "__main__":
     print(f"\n{ans.answer}\n")
     print("Sources:")
     for i, rc in enumerate(ans.citations, start=1):
-        print(f"  [{i}] {rc.chunk.title} — p.{rc.chunk.page}  (score {rc.score:.3f})")
+        print(f"  [{i}] {rc.chunk.title} - p.{rc.chunk.page}  (score {rc.score:.3f})")
     cost = f"${ans.cost_usd:.5f}" if ans.cost_usd is not None else "n/a"
     print(f"\nmodel={ans.model}  timings={ans.timings_ms}  tokens={ans.usage}  cost={cost}")
