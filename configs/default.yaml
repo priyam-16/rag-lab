@@ -1,0 +1,31 @@
+# Baseline configuration. Every experiment later = a copy of this file with one thing changed.
+name: baseline
+
+corpus:
+  raw_dir: data/raw
+
+chunking:
+  strategy: fixed          # later: recursive, semantic, parent_child, contextual
+  chunk_size: 1200         # characters
+  chunk_overlap: 200
+
+embedding:
+  provider: fastembed      # local ONNX model, free, no API key. Alternative: litellm
+  model: BAAI/bge-small-en-v1.5
+  # provider: litellm
+  # model: text-embedding-3-small
+
+vector_store:
+  collection: raglab_baseline
+  local_path: data/qdrant  # used when QDRANT_URL is not set
+
+retrieval:
+  top_k: 5
+
+generation:
+  # Any LiteLLM model string. Check provider consoles for current model names.
+  model: groq/llama-3.3-70b-versatile
+  # model: anthropic/claude-sonnet-4-5
+  # model: openai/gpt-4o-mini
+  temperature: 0.0
+  max_tokens: 800

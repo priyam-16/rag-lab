@@ -1,0 +1,56 @@
+# Default demo corpus. `scripts/download_corpus.py` fetches entries that have a `url`.
+# Regulators move PDFs around: if a download fails, open `page`, save the PDF into
+# data/raw/ using the `file` name below, and re-run ingestion.
+#
+# The mix is deliberate — different document shapes stress different RAG techniques.
+
+documents:
+  - id: bis_basel3_final
+    title: "Basel III: Finalising post-crisis reforms (BCBS d424)"
+    file: bis_basel3_final.pdf
+    url: https://www.bis.org/bcbs/publ/d424.pdf
+    page: https://www.bis.org/bcbs/publ/d424.htm
+    shape: formulas, risk-weight tables, long
+
+  - id: bis_basel3_summary
+    title: "Basel III: Finalising post-crisis reforms — high-level summary"
+    file: bis_basel3_summary.pdf
+    url: https://www.bis.org/bcbs/publ/d424_hlsummary.pdf
+    page: https://www.bis.org/bcbs/publ/d424_hlsummary.htm
+    shape: short prose, easy baseline
+
+  - id: mas_notice_637
+    title: "MAS Notice 637 — Risk Based Capital Adequacy Requirements"
+    file: mas_notice_637.pdf
+    page: https://www.mas.gov.sg/regulation/notices/notice-637
+    shape: dense, heavy cross-references
+
+  - id: mas_trm_guidelines
+    title: "MAS Technology Risk Management Guidelines (2021)"
+    file: mas_trm_guidelines.pdf
+    page: https://www.mas.gov.sg/regulation/guidelines/technology-risk-management-guidelines
+    shape: long, numbered sections
+
+  - id: mas_feat
+    title: "MAS FEAT Principles (AI and data analytics in finance)"
+    file: mas_feat.pdf
+    page: https://www.mas.gov.sg/publications/monographs-or-information-paper/2018/feat
+    shape: short principles prose
+
+  - id: dbs_annual_report
+    title: "DBS Annual Report (latest)"
+    file: dbs_annual_report.pdf
+    page: https://www.dbs.com/investors/default.page
+    shape: financial tables, cross-bank comparison
+
+  - id: ocbc_annual_report
+    title: "OCBC Annual Report (latest)"
+    file: ocbc_annual_report.pdf
+    page: https://www.ocbc.com/group/investors/index
+    shape: financial tables, cross-bank comparison
+
+  - id: uob_annual_report
+    title: "UOB Annual Report (latest)"
+    file: uob_annual_report.pdf
+    page: https://www.uobgroup.com/investor-relations/index.page
+    shape: financial tables, cross-bank comparison
