@@ -24,13 +24,16 @@ def ingest(cfg: Config) -> dict:
     t0 = time.perf_counter()
     pages = load_corpus(cfg.resolve(cfg.corpus.raw_dir), REPO_ROOT / "data" / "sources.yaml")
     if not pages:
-        raise SystemExit(f"No PDFs found in {cfg.corpus.raw_dir}. Run scripts/download_corpus.py.")
+        raise SystemExit(f"No PDFs found in {cfg.corpus.raw_dir}. Run: raglab download")
     chunks = get_chunker(cfg.chunking).chunk(pages)
     embedder = get_embedder(cfg.embedding)
     vectors = embedder.embed_documents([c.text for c in chunks])
     store = _store(cfg)
-    store.recreate(embedder.dim)
-    store.upsert(chunks, vectors)
+    try:
+        store.recreate(embedder.dim)
+        store.upsert(chunks, vectors)
+    finally:
+        store.close()
     return {
         "documents": len({p.doc_id for p in pages}),
         "pages": len(pages),
@@ -42,8 +45,12 @@ def ingest(cfg: Config) -> dict:
 class RAGPipeline:
     def __init__(self, cfg: Config):
         self.cfg = cfg
-        self.retriever = VectorRetriever(get_embedder(cfg.embedding), _store(cfg))
+        self.store = _store(cfg)
+        self.retriever = VectorRetriever(get_embedder(cfg.embedding), self.store)
         self.generator = Generator(cfg.generation)
+
+    def close(self) -> None:
+        self.store.close()
 
     def ask(self, question: str, top_k: int | None = None, model: str | None = None) -> Answer:
         t0 = time.perf_counter()

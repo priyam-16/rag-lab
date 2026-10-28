@@ -52,7 +52,9 @@ class QdrantStore:
             self.client.upsert(self.collection, points=points[i : i + batch])
 
     def search(self, vector: list[float], top_k: int) -> list[RetrievedChunk]:
-        res = self.client.query_points(self.collection, query=vector, limit=top_k, with_payload=True)
+        res = self.client.query_points(
+            self.collection, query=vector, limit=top_k, with_payload=True
+        )
         out = []
         for p in res.points:
             pl = dict(p.payload)
@@ -69,3 +71,7 @@ class QdrantStore:
 
     def count(self) -> int:
         return self.client.count(self.collection).count
+
+    def close(self) -> None:
+        """Release the connection / local file lock explicitly (avoids noisy __del__ at exit)."""
+        self.client.close()

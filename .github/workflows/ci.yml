@@ -1,0 +1,22 @@
+# Runs on every push / PR. Offline only: no API keys, no API cost.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install (exact versions from uv.lock)
+        run: uv sync --locked
+      - name: Lint + unit tests
+        run: uv run poe test
+      - name: CLI smoke test
+        run: uv run raglab --help

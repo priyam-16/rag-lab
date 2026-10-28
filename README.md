@@ -33,24 +33,24 @@ question ──► embed ──► Qdrant vector search (top-k) ──► LLM vi
 
 ## Quickstart
 
+Needs [uv](https://docs.astral.sh/uv/) (`pip install uv`). No venv activation needed — `uv run` uses the project's `.venv` automatically.
+
 ```bash
 git clone https://github.com/priyam-16/rag-lab && cd rag-lab
-python -m venv .venv
-# macOS/Linux:  source .venv/bin/activate
-# Windows:      .venv\Scripts\activate
-pip install -e ".[dev]"
+uv run poe setup                 # creates .venv, installs exact versions (uv.lock), git hooks
+cp .env.example .env             # add OPENAI_API_KEY (embeddings) + GROQ_API_KEY (answers)
 
-cp .env.example .env            # then add GROQ_API_KEY (and others you have)
+uv run raglab download           # fetch public PDFs; lists any to save manually
+uv run raglab ingest             # parse -> chunk -> embed -> index
+uv run raglab ask "What is the output floor under the Basel III reforms?"
+uv run raglab serve --reload     # API at http://localhost:8000/docs
 
-python scripts/download_corpus.py   # fetches public PDFs; lists any to save manually
-python scripts/ingest.py            # parse → chunk → embed → index
-python scripts/ask.py "What is the output floor under the Basel III reforms?"
-
-uvicorn api.main:app --reload       # API at http://localhost:8000/docs
-pytest                              # offline tests, no keys needed
+uv run poe test                  # lint + offline unit tests (no keys needed)
+uv run poe                       # list every task
 ```
 
-**Bring your own documents:** drop any PDFs into `data/raw/` and re-run `scripts/ingest.py`.
+The old `python scripts/*.py` entry points still work (they call the same CLI).
+**Bring your own documents:** drop PDFs into `data/raw/` and re-run `raglab ingest`.
 
 ## Roadmap
 

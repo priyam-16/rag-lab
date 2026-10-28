@@ -1,6 +1,6 @@
 [project]
 name = "raglab"
-version = "0.1.0"
+version = "0.2.0"
 description = "Advanced RAG lab: modular retrieval pipeline with cross-model benchmarking on financial regulatory documents"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -18,8 +18,18 @@ dependencies = [
     "python-dotenv>=1.0",
 ]
 
-[project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.6"]
+# The `raglab` command. Installing the project creates a launcher that calls raglab.cli:main.
+[project.scripts]
+raglab = "raglab.cli:main"
+
+# Dev-only tools (uv installs this group by default; pip: `pip install --group dev`).
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "poethepoet>=0.29",
+    "pre-commit>=3.7",
+]
 
 [build-system]
 requires = ["setuptools>=68"]
@@ -28,5 +38,30 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# ---------------------------------------------------------------- tasks
+# Run with:  uv run poe <task>     (list them all: uv run poe)
+[tool.poe.tasks]
+setup      = { shell = "uv sync && uv run pre-commit install", help = "First-time setup: deps + git hooks" }
+lint       = { cmd = "ruff check .", help = "Lint" }
+format     = { cmd = "ruff format .", help = "Auto-format code" }
+unit       = { cmd = "pytest tests/unit -q", help = "Offline unit tests (no keys, no network)" }
+integration = { cmd = "pytest tests/integration -q -m integration", help = "Live tests: real APIs, costs a little" }
+test       = { sequence = ["lint", "unit"], help = "Lint + unit tests (what CI runs)" }
+download   = { cmd = "raglab download", help = "Download the default corpus into data/raw" }
+ingest     = { cmd = "raglab ingest --config configs/default.yaml", help = "Parse, chunk, embed, index" }
+ask        = { cmd = "raglab ask", help = "Ask a question: uv run poe ask \"...\"" }
+serve      = { cmd = "raglab serve --reload", help = "Start the API on http://localhost:8000/docs" }
+
+# ---------------------------------------------------------------- tools
 [tool.ruff]
 line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]  # line length is handled by `ruff format`
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit"]
+markers = ["integration: hits real APIs; run explicitly with `uv run poe integration`"]
+filterwarnings = ["ignore::DeprecationWarning"]

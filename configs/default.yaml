@@ -10,10 +10,10 @@ chunking:
   chunk_overlap: 200
 
 embedding:
-  provider: fastembed      # local ONNX model, free, no API key. Alternative: litellm
-  model: BAAI/bge-small-en-v1.5
-  # provider: litellm
-  # model: text-embedding-3-small
+  provider: litellm        # hosted: fast, ~2-5 cents per full ingest. Needs OPENAI_API_KEY
+  model: text-embedding-3-small
+  # provider: fastembed    # local ONNX model: free, no key, slower on a laptop CPU
+  # model: BAAI/bge-small-en-v1.5
 
 vector_store:
   collection: raglab_baseline
@@ -24,8 +24,8 @@ retrieval:
 
 generation:
   # Any LiteLLM model string. Check provider consoles for current model names.
-  model: groq/llama-3.3-70b-versatile
+  model: groq/openai/gpt-oss-120b      # free tier on Groq; reasoning model -> needs max_tokens >= 2000
+  # model: groq/llama-3.1-8b-instant   # fastest/cheapest comparison
   # model: anthropic/claude-sonnet-4-5
-  # model: openai/gpt-4o-mini
   temperature: 0.0
-  max_tokens: 800
+  max_tokens: 2000
