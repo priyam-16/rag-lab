@@ -1,0 +1,12 @@
+.venv
+.git
+.env
+data/raw
+data/qdrant
+data/processed
+results
+**/__pycache__
+.pytest_cache
+.ruff_cache
+web/node_modules
+web/.next

@@ -1,0 +1,28 @@
+# Production config template. Copy to configs/prod.yaml on the server (not committed if it
+# contains environment-specific paths). Secrets NEVER go here: they come from environment
+# variables (OPENAI_API_KEY, GROQ_API_KEY, QDRANT_URL, QDRANT_API_KEY) set by the job/vault.
+name: prod
+
+corpus:
+  raw_dir: /data/raglab/raw          # absolute paths on servers
+
+chunking:
+  strategy: fixed
+  chunk_size: 1200
+  chunk_overlap: 200
+
+embedding:
+  provider: litellm
+  model: text-embedding-3-small      # or an on-prem/approved embedding endpoint via LiteLLM
+
+vector_store:
+  collection: raglab_prod
+  local_path: /data/raglab/qdrant    # only used if QDRANT_URL is unset; prefer a Qdrant server
+
+retrieval:
+  top_k: 5
+
+generation:
+  model: groq/openai/gpt-oss-120b    # swap for the approved model, e.g. an on-prem endpoint
+  temperature: 0.0
+  max_tokens: 2000

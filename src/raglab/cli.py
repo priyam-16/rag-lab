@@ -59,7 +59,17 @@ def cmd_ask(args: argparse.Namespace) -> None:
 def cmd_serve(args: argparse.Namespace) -> None:
     import uvicorn
 
-    uvicorn.run("api.main:app", host=args.host, port=args.port, reload=args.reload)
+    from raglab.config import REPO_ROOT
+
+    # `api/` sits next to `src/`, not inside the package. A launcher doesn't put the
+    # repo folder on sys.path, so tell uvicorn where to import `api.main` from.
+    uvicorn.run(
+        "api.main:app",
+        host=args.host,
+        port=args.port,
+        reload=args.reload,
+        app_dir=str(REPO_ROOT),
+    )
 
 
 # ---------- the parser: reads the words you typed and picks a function ----------

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import time
 
 from raglab.chunking import get_chunker
@@ -13,6 +14,8 @@ from raglab.models import Answer
 from raglab.retrieval.vector import VectorRetriever
 from raglab.store.qdrant_store import QdrantStore, make_client
 
+log = logging.getLogger(__name__)
+
 
 def _store(cfg: Config) -> QdrantStore:
     s = Secrets()
@@ -22,12 +25,21 @@ def _store(cfg: Config) -> QdrantStore:
 
 def ingest(cfg: Config) -> dict:
     t0 = time.perf_counter()
+    log.info("[1/4] parsing PDFs in %s", cfg.corpus.raw_dir)
     pages = load_corpus(cfg.resolve(cfg.corpus.raw_dir), REPO_ROOT / "data" / "sources.yaml")
     if not pages:
-        raise SystemExit(f"No PDFs found in {cfg.corpus.raw_dir}. Run: raglab download")
+        raise FileNotFoundError(f"No usable PDFs in {cfg.corpus.raw_dir}. Run: raglab download")
+
+    log.info("[2/4] chunking %d pages (%s)", len(pages), cfg.chunking.strategy)
     chunks = get_chunker(cfg.chunking).chunk(pages)
+
+    log.info("[3/4] embedding %d chunks with %s", len(chunks), cfg.embedding.model)
+    t1 = time.perf_counter()
     embedder = get_embedder(cfg.embedding)
     vectors = embedder.embed_documents([c.text for c in chunks])
+    log.info("      embedded in %.1fs", time.perf_counter() - t1)
+
+    log.info("[4/4] writing to Qdrant collection '%s'", cfg.vector_store.collection)
     store = _store(cfg)
     try:
         store.recreate(embedder.dim)

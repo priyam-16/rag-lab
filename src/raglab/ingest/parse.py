@@ -6,6 +6,8 @@ flattened text. Layout-aware parsing (e.g. Docling) is a later benchmark arm.
 
 from __future__ import annotations
 
+import hashlib
+import logging
 import re
 from pathlib import Path
 
@@ -13,6 +15,8 @@ import pymupdf as fitz
 import yaml
 
 from raglab.models import Page
+
+log = logging.getLogger(__name__)
 
 
 def _clean(text: str) -> str:
@@ -41,7 +45,20 @@ def load_corpus(raw_dir: Path, sources_file: Path | None = None) -> list[Page]:
             titles[d["file"]] = (d["id"], d["title"])
 
     pages: list[Page] = []
+    seen: dict[str, str] = {}  # content hash -> first file name
     for pdf in sorted(raw_dir.glob("*.pdf")):
+        # Same bytes under a different file name = duplicate; indexing it twice
+        # would waste top-k slots on identical chunks.
+        digest = hashlib.sha256(pdf.read_bytes()).hexdigest()
+        if digest in seen:
+            log.warning("skipping %s: identical to %s", pdf.name, seen[digest])
+            continue
+        seen[digest] = pdf.name
         doc_id, title = titles.get(pdf.name, (pdf.stem, pdf.stem.replace("_", " ")))
-        pages.extend(parse_pdf(pdf, doc_id, title))
+        doc_pages = parse_pdf(pdf, doc_id, title)
+        if not doc_pages:
+            log.warning("%s: no extractable text (scanned PDF? needs OCR) - skipped", pdf.name)
+        else:
+            log.info("parsed %s: %d pages", pdf.name, len(doc_pages))
+        pages.extend(doc_pages)
     return pages

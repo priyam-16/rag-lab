@@ -52,6 +52,18 @@ uv run poe                       # list every task
 The old `python scripts/*.py` entry points still work (they call the same CLI).
 **Bring your own documents:** drop PDFs into `data/raw/` and re-run `raglab ingest`.
 
+## Repository guide
+
+| Path | What's there |
+|---|---|
+| `src/raglab/` | Pipeline code; `cli.py` is the `raglab` command |
+| `configs/` | One YAML per experiment (`prod.example.yaml` for servers) |
+| `docs/` | [architecture](docs/architecture.md), [ADRs](docs/adr/), [runbook](docs/runbook.md), [LEARNING](docs/LEARNING.md) |
+| `specs/` | Feature specs, written before building |
+| `infra/` | Dockerfile, docker-compose (Qdrant + API), scheduler job guide |
+| `AGENTS.md`, `.claude/` | Instructions, skills and subagents for AI coding agents |
+| `tests/unit`, `tests/integration` | Offline tests (CI) / live API tests (manual) |
+
 ## Roadmap
 
 - [x] Baseline: parse, chunk, embed, vector search, cited answers, CLI + API

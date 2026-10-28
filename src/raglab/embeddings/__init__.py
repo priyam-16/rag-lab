@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import math
 from typing import Protocol
 
 from raglab.config import EmbeddingCfg
+
+log = logging.getLogger(__name__)
 
 
 class Embedder(Protocol):
@@ -46,6 +49,8 @@ class LiteLLMEmbedder:
         for i in range(0, len(texts), 128):
             resp = litellm.embedding(model=self.model, input=texts[i : i + 128])
             out.extend(d["embedding"] for d in resp.data)
+            if len(texts) > 128:
+                log.info("      embedded %d/%d", len(out), len(texts))
         return out
 
     def embed_query(self, text):
