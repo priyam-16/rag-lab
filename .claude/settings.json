@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./data/raw/**)",
+      "Read(./data/qdrant/**)",
+      "Read(./data/processed/**)",
+      "Read(./.venv/**)",
+      "Read(./web/node_modules/**)",
+      "Read(./web/.next/**)",
+      "Read(./uv.lock)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run --quiet python .claude/hooks/format_file.py"
+          }
+        ]
+      }
+    ]
+  }
+}

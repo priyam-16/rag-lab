@@ -22,3 +22,7 @@ node_modules/
 # os / editor
 .DS_Store
 .vscode/
+
+# personal agent notes / local overrides
+CLAUDE.local.md
+.claude/settings.local.json
