@@ -3,6 +3,9 @@
 One section per stage: the concept, why we chose what we did, the numbers we got, and
 interview questions with model answers. This is the interview-prep guide for the project.
 
+Drill questions across all topics (FDE cases, system design, governance, vector search at scale):
+see [`interview-bank.md`](interview-bank.md).
+
 ## Results log
 | Date | Config | hit@5 | MRR | Faithfulness | Correctness | p50 latency | Cost/query | Note |
 |---|---|---|---|---|---|---|---|---|
