@@ -15,19 +15,26 @@ Revision method: read the skeleton, then answer out loud without looking. Week 6
 **Skeleton (STAR):** constraint → your role → technical actions → the non-technical blocker and your
 tactic → measurable result.
 
-**Draft (ARIA — verify every fact; fill brackets with real numbers):**
-- *Situation:* policies and documents scattered across SharePoint, Teams, shared drives; no approved
-  enterprise LLM vendor, so cloud LLMs were not allowed.
-- *Task:* led design of ARIA, a semantic search + Q&A assistant running entirely inside the bank.
-- *Action (technical):* Llama 3 [size] on-prem in Cloudera ML; FastAPI wrappers for data access inside
-  the firewall; embeddings [model] in [vector DB]; gold Q&A set of [N] questions for measurement.
-- *Action (non-technical, the hard part):* getting risk, compliance and IT to agree to a pilot. Split the
-  approval into low-risk phases (read-only, no customer data first, every answer cites its source) and
-  shared the evaluation method with validation **before** results.
-- *Result:* [pilot approved / users / time saved / next initiative].
+**Draft (OCBC credit-risk programme, from the resume — fill brackets with real details; only real work):**
+- *Situation:* credit-risk / operational decisioning in a MAS-regulated bank; models must pass independent
+  validation and governance sign-off before production, and stay monitored after.
+- *Task:* led end-to-end delivery of [programme] — problem framing to production and governance sign-off.
+- *Action (technical):* leakage-aware, time-based PySpark feature pipelines over transactional, behavioural
+  and bureau data; [LightGBM / CatBoost] models; SHAP explainability; drift/stability and band-migration
+  monitoring with PSI dashboards (Streamlit/Dash) on Cloudera ML; BERT-derived NLP signals as features.
+- *Action (non-technical, the hard part):* aligning engineering, risk, compliance, validation and business
+  as PSC chair — [the specific disagreement, e.g. explainability vs performance, or scope vs timeline] —
+  resolved by [your tactic: e.g. agreeing validation criteria up front, phased go/no-go gates, making
+  trade-offs visible with numbers].
+- *Result:* ~18–20% improvement in operational effectiveness (resume figure — be ready to explain how it
+  was measured); [models in production / approved / reused].
 
-**Why it works:** concrete constraint, "I" actions, a specific tactic for the human problem, a result.
-A wrong specific is worse than none: leave out anything you can't confirm.
+**Why it works:** concrete regulatory constraint, "I" actions, a specific tactic for the human problem, a
+result. A wrong specific is worse than none: leave out anything you can't confirm.
+
+**For GenAI/RAG questions:** don't claim production RAG experience you don't have. Use RAG Lab (public,
+measured) and say what you'd carry from regulated model delivery into GenAI: validation-first evaluation,
+monitoring, governance sign-off.
 
 ---
 
