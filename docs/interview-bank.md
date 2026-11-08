@@ -156,6 +156,91 @@ guardrail as the last line — with adversarial tests proving a user can't retri
 
 ---
 
+## Q8. Combined system design — agents + RAG + ML (credit assistant)
+> "Design an AI assistant for a bank's credit team. For each new SME loan application it should gather and
+> read the documents, check them against credit policy, get a PD score from the existing ML model, and draft
+> a credit memo for the analyst to approve."
+
+**Skeleton:** clarify (volume, document types, existing model interface, constraints, success metric) →
+orchestrator + four steps → where each technology fits → controls → evaluation → rollout & failure modes.
+
+| Step | Component | Why |
+|---|---|---|
+| Orchestrate | **LangGraph** state machine: steps, branches, retries, pause for human approval, checkpointing | Branching workflow with human pause; resumable after failure |
+| ① Extract | **Docling / Mistral OCR** → LLM **structured output** validated by **Pydantic** schemas; low-confidence fields flagged | Tables/scans need layout-aware parsing; schemas catch bad fields |
+| ② Policy check | **RAG**: hybrid (BM25 + dense, RRF) + reranker over credit policy; **metadata filters** (product, segment, current version); cited paragraphs | Long, changing policy; version filter avoids citing outdated rules |
+| Rule checks | **Deterministic code** for ratios (DSCR, leverage) vs policy thresholds | Arithmetic and hard limits must be exact: LLMs explain, code calculates |
+| ③ Risk score | Existing validated **PD model** (e.g. LightGBM) called as a **tool** + **SHAP** drivers | Already governed; agent uses it, never replaces it |
+| ④ Memo | LLM with fixed template; only extracted facts, policy citations, model output; every number linked to source | Grounded, auditable |
+| Tools | **MCP** / API tools to document store, policy search, PD model, loan system — each permissioned and logged | Clean, least-privilege integration |
+| ⑤ Decide | Analyst approves / edits / rejects; edits recorded | Decision stays human; edits become eval data |
+
+**Controls:** Presidio PII masking; prompt-injection defence for uploaded documents; per-applicant / per-role
+permissions; full audit trail (inputs, tool calls, model versions, retrieved chunks, PD, memo versions, edits);
+LLM parts reviewed as decision-support under model-risk governance.
+**Evaluation:** field-level extraction accuracy; policy hit@k + verdict agreement with analysts; rule unit tests;
+memo faithfulness + analyst edit rate; **trajectory grading** (right tools, order, no skipped checks, valid args);
+business: analyst minutes per application, turnaround (with CIs).
+**Rollout / failures:** shadow mode on 50 historical files → 3–5 analysts. Unusual statements → human;
+outdated policy → version filter; missing docs → agent requests, never guesses; invented numbers → memo uses
+only extracted fields; loops → step limit + timeout.
+**Closing:** "Agents orchestrate, RAG grounds in policy, the validated ML model scores risk, deterministic code
+does the arithmetic, and a human decides — every step logged and measured."
+(Maps to the portfolio: ① = Project 3-lite, ② = RAG Lab, ③ + orchestration = Project 2.)
+
+---
+
+## Q9. Buy vs build — "We have Copilot. Why build anything?"
+> "Our teams already use Microsoft 365 Copilot to search the intranet. Why would we build a custom system?"
+
+**Skeleton:** agree where buying is right → explain that Copilot *is* RAG (still needs setup, permissions,
+evaluation) → name the real risk (oversharing) → list when custom wins → recommend a split.
+
+- **Buy** for general intranet / M365 search: Copilot or Glean. Rebuilding SharePoint search is usually waste.
+- **Copilot is RAG productised:** it retrieves from an index over M365 content and grounds answers. Someone still
+  configures connectors, sensitivity labels and permissions, and measures accuracy.
+- **Oversharing risk:** Copilot respects existing permissions, and enterprise permissions are often too broad, so
+  users can surface HR/salary files that were technically shared. Fix permission hygiene and test for leakage
+  *before* rollout (the Q7 problem).
+- **Build** when: data is in core systems Copilot can't reach (Teradata, loan/risk systems); AI must sit inside a
+  workflow (credit memo) not a chat window; batch processing; non-Microsoft or on-prem estates; a regulated
+  process needs proven, measured accuracy.
+- **Recommendation line:** "Buy for intranet search after a permissions clean-up and oversharing test; build for
+  the regulated workflow over core-banking data — here's the architecture and how we'd measure it."
+- **Why RAG Lab matters here:** having built and measured retrieval yourself is what lets you evaluate a vendor
+  product properly and know when to build.
+
+---
+
+## Q10. Classic system design — "How does Uber find the nearest drivers?"
+> (Source: DevMonk reel, 2026-11-04.) "Thousands book at once after a concert. Design the live driver heatmap
+> and nearest-driver lookup."
+
+**Skeleton:** ingest location updates → partition space into cells → in-memory counts per cell → handle
+duplicates and disconnects → shard → query own cell + neighbours → rank by ETA.
+
+| Part | Specifics | Why |
+|---|---|---|
+| Ingest | Driver app sends (driver_id, lat, lng, ts) every few seconds → **Kafka** | Absorbs 10x spikes without losing updates |
+| Partition | **H3 hexagons** (or geohash / quadtree) | Hexagon neighbours are equidistant; easy k-ring expansion |
+| Counts | Per-cell counters in **Redis**; on cell change: −1 old, +1 new; store each driver's last cell + last ts | Millisecond reads; same-cell updates change nothing (no double counting) |
+| Disconnects | Per-driver **TTL** (e.g. 30 s); expired drivers removed | Stale drivers don't inflate supply |
+| Ordering | Ignore updates older than stored ts (Kafka is at-least-once, can reorder) | Idempotent, correct under duplicates |
+| Shard | By city/region; **split hot cells** further (a concert floods one shard) | Avoid a single hot machine |
+| Query | Search own cell + neighbours; widen k-ring if empty; rank candidates by **road-network ETA**, not straight line | Nearest by distance ≠ nearest by time |
+| Heatmap / surge | Colour by demand vs supply per cell | Surge where bookings ≫ drivers |
+
+**ML around the edges (not in the matching core):** ETA prediction (GBMs / deep models on traffic, time, route);
+demand forecasting per cell 15–30 min ahead (reposition drivers before the concert ends); surge pricing models;
+matching as an optimisation problem. LLM angle if pushed: a support agent calling these systems as tools.
+**Same principle as AI systems:** AI at the edges, exact deterministic code at the core.
+
+**Parallel to vector search (say this):** cells ≈ IVF clusters; "own cell + neighbours" ≈ probing the nearest
+clusters; sharding by city ≈ sharding the index. Both find nearest things fast by partitioning space and
+searching only nearby partitions.
+
+---
+
 ## Concepts: vector search at scale (drill 2026-11-03/04)
 
 **"Search 100M vectors in 100 ms":** clarify (QPS, recall target, filters, update rate, dims) → math
