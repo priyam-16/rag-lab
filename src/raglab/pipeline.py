@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import time
+from dataclasses import asdict
+from pathlib import Path
 
 from raglab.chunking import get_chunker
 from raglab.config import REPO_ROOT, Config, Secrets
 from raglab.embeddings import get_embedder
 from raglab.generation.generator import Generator
 from raglab.ingest.parse import load_corpus
-from raglab.models import Answer
+from raglab.models import Answer, Chunk, RetrievedChunk
 from raglab.retrieval.vector import VectorRetriever
 from raglab.store.qdrant_store import QdrantStore, make_client
 
@@ -23,6 +26,25 @@ def _store(cfg: Config) -> QdrantStore:
     return QdrantStore(client, cfg.vector_store.collection)
 
 
+def chunks_path(cfg: Config) -> Path:
+    """Where ingest saves this config's chunks (one file per collection)."""
+    return cfg.resolve(cfg.corpus.processed_dir) / f"{cfg.vector_store.collection}.chunks.jsonl"
+
+
+def save_chunks(chunks: list[Chunk], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        for c in chunks:
+            f.write(json.dumps(asdict(c), ensure_ascii=False) + "\n")
+
+
+def load_chunks(path: Path) -> list[Chunk]:
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found. Run `raglab ingest` with this config first.")
+    with open(path, encoding="utf-8") as f:
+        return [Chunk(**json.loads(line)) for line in f if line.strip()]
+
+
 def ingest(cfg: Config) -> dict:
     t0 = time.perf_counter()
     log.info("[1/4] parsing PDFs in %s", cfg.corpus.raw_dir)
@@ -32,6 +54,7 @@ def ingest(cfg: Config) -> dict:
 
     log.info("[2/4] chunking %d pages (%s)", len(pages), cfg.chunking.strategy)
     chunks = get_chunker(cfg.chunking).chunk(pages)
+    save_chunks(chunks, chunks_path(cfg))
 
     log.info("[3/4] embedding %d chunks with %s", len(chunks), cfg.embedding.model)
     t1 = time.perf_counter()
@@ -64,9 +87,12 @@ class RAGPipeline:
     def close(self) -> None:
         self.store.close()
 
+    def retrieve(self, question: str, top_k: int | None = None) -> list[RetrievedChunk]:
+        return self.retriever.retrieve(question, top_k or self.cfg.retrieval.top_k)
+
     def ask(self, question: str, top_k: int | None = None, model: str | None = None) -> Answer:
         t0 = time.perf_counter()
-        chunks = self.retriever.retrieve(question, top_k or self.cfg.retrieval.top_k)
+        chunks = self.retrieve(question, top_k)
         t1 = time.perf_counter()
         text, usage, cost, used_model = self.generator.generate(question, chunks, model)
         t2 = time.perf_counter()

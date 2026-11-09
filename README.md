@@ -67,7 +67,8 @@ The old `python scripts/*.py` entry points still work (they call the same CLI).
 ## Roadmap
 
 - [x] Baseline: parse, chunk, embed, vector search, cited answers, CLI + API
-- [ ] Gold Q&A set (~100 questions) + eval harness (faithfulness, relevance, recall@k, LLM judge)
+- [x] Eval harness: hit@k, MRR, faithfulness, correctness, refusal, latency, cost — all with 95% CIs; CI regression gate
+- [ ] Gold Q&A set: drafted with `raglab draft-gold`, human-reviewed (in progress)
 - [ ] Hybrid retrieval (BM25 + vector, RRF) and rerankers (local bge vs hosted)
 - [ ] Chunking arms: recursive, semantic, parent-child, contextual retrieval
 - [ ] Query transforms: rewriting, multi-query, HyDE

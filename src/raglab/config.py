@@ -22,6 +22,7 @@ class Secrets(BaseSettings):
 
 class CorpusCfg(BaseModel):
     raw_dir: str = "data/raw"
+    processed_dir: str = "data/processed"  # chunks saved as JSONL (gold drafting, BM25 later)
 
 
 class ChunkingCfg(BaseModel):
@@ -50,6 +51,16 @@ class GenerationCfg(BaseModel):
     max_tokens: int = 800
 
 
+class EvaluationCfg(BaseModel):
+    gold_path: str = "evals/gold_set.jsonl"
+    results_dir: str = "results"
+    # Judge from a different model family than the generator reduces self-preference bias.
+    judge_model: str = "anthropic/claude-sonnet-4-5"
+    judge_max_tokens: int = 600
+    n_bootstrap: int = 1000  # resamples for confidence intervals
+    max_retries: int = 5  # on provider rate limits
+
+
 class Config(BaseModel):
     name: str = "baseline"
     corpus: CorpusCfg = CorpusCfg()
@@ -58,6 +69,7 @@ class Config(BaseModel):
     vector_store: VectorStoreCfg = VectorStoreCfg()
     retrieval: RetrievalCfg = RetrievalCfg()
     generation: GenerationCfg = GenerationCfg()
+    evaluation: EvaluationCfg = EvaluationCfg()
 
     def resolve(self, rel: str) -> Path:
         """Resolve a repo-relative path from the config."""

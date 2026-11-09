@@ -5,8 +5,7 @@ description: Evaluate a config against the gold question set and summarise resul
 
 # Run an evaluation
 
-> Status: the eval harness is being built (spec: `specs/001-eval-harness/`).
-> Until `raglab evaluate` exists, say so and offer to implement the spec instead.
+> Requires a reviewed gold set at `evals/gold_set.jsonl` (draft with `raglab draft-gold`).
 
 1. Confirm the config's index exists (else `uv run raglab ingest --config <cfg>`).
 2. Cheap first: retrieval-only metrics (free, fast):

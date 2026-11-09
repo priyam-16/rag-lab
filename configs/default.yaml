@@ -29,3 +29,10 @@ generation:
   # model: anthropic/claude-sonnet-4-5
   temperature: 0.0
   max_tokens: 2000
+
+evaluation:
+  gold_path: evals/gold_set.jsonl
+  results_dir: results
+  # Judge = a different model family than the generator (less self-preference bias).
+  judge_model: anthropic/claude-sonnet-4-5
+  n_bootstrap: 1000

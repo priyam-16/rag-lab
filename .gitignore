@@ -26,3 +26,6 @@ node_modules/
 # personal agent notes / local overrides
 CLAUDE.local.md
 .claude/settings.local.json
+
+# gold-set drafts are reviewed, then saved as evals/gold_set.jsonl (which IS committed)
+evals/gold_set.draft.jsonl

@@ -18,5 +18,7 @@ jobs:
         run: uv sync --locked
       - name: Lint + unit tests
         run: uv run poe test
+      - name: Retrieval regression gate (synthetic corpus, offline)
+        run: uv run pytest tests/unit/test_eval_gate.py -q
       - name: CLI smoke test
         run: uv run raglab --help

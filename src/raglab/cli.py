@@ -3,6 +3,8 @@
     raglab download                                   fetch the default corpus into data/raw
     raglab ingest   --config configs/default.yaml     parse -> chunk -> embed -> index
     raglab ask      "question" [--model M] [--top-k K]
+    raglab draft-gold [--n 40]                         LLM drafts gold questions for human review
+    raglab evaluate [--retrieval-only] [--fail-under-hit 0.8]   score a config on the gold set
     raglab serve    [--port 8000] [--reload]
 
 pyproject.toml has `[project.scripts] raglab = "raglab.cli:main"`, so installing the
@@ -56,6 +58,47 @@ def cmd_ask(args: argparse.Namespace) -> None:
     print(f"\nmodel={ans.model}  timings={ans.timings_ms}  tokens={ans.usage}  cost={cost}")
 
 
+def cmd_draft_gold(args: argparse.Namespace) -> None:
+    from raglab.config import load_config
+    from raglab.evals.draft import draft_gold, write_drafts
+    from raglab.pipeline import chunks_path, load_chunks
+
+    cfg = load_config(args.config)
+    drafts = draft_gold(cfg, load_chunks(chunks_path(cfg)), n=args.n, model=args.model)
+    out = write_drafts(drafts, cfg.resolve(args.out))
+    log.info("wrote %d draft questions to %s", len(drafts), out)
+    log.info(
+        "NEXT: check every item against its PDF page, fix/delete, save as %s",
+        cfg.evaluation.gold_path,
+    )
+
+
+def cmd_evaluate(args: argparse.Namespace) -> None:
+    from raglab.config import load_config
+    from raglab.evals.gold import load_gold
+    from raglab.evals.runner import evaluate, format_summary, write_results
+
+    cfg = load_config(args.config)
+    gold = load_gold(cfg.resolve(args.gold or cfg.evaluation.gold_path))
+    result = evaluate(
+        cfg,
+        gold,
+        retrieval_only=args.retrieval_only,
+        model=args.model,
+        judge_model=args.judge_model,
+        limit=args.limit,
+    )
+    path = write_results(result, cfg)
+    print(format_summary(result))
+    log.info("results saved to %s", path)
+
+    # Regression gate: fail the command (exit 1) if retrieval quality drops below the floor.
+    if args.fail_under_hit is not None:
+        hit = result["summary"].get("hit_at_k", {}).get("mean")
+        if hit is None or hit < args.fail_under_hit:
+            raise RuntimeError(f"hit@k {hit} is below the required {args.fail_under_hit}")
+
+
 def cmd_serve(args: argparse.Namespace) -> None:
     import uvicorn
 
@@ -94,6 +137,30 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--model", default=None, help="override generation.model, e.g. anthropic/...")
     p.add_argument("--top-k", type=int, default=None)
     p.set_defaults(func=cmd_ask)
+
+    p = sub.add_parser(
+        "draft-gold", help="LLM-draft gold questions from indexed chunks (for review)"
+    )
+    p.add_argument("--config", default=DEFAULT_CONFIG)
+    p.add_argument("--n", type=int, default=40, help="number of questions (~10%% unanswerable)")
+    p.add_argument("--model", default=None, help="drafting model (default: evaluation.judge_model)")
+    p.add_argument("--out", default="evals/gold_set.draft.jsonl")
+    p.set_defaults(func=cmd_draft_gold)
+
+    p = sub.add_parser("evaluate", help="score a config against the gold set")
+    p.add_argument("--config", default=DEFAULT_CONFIG)
+    p.add_argument("--gold", default=None, help="gold file (default: evaluation.gold_path)")
+    p.add_argument("--retrieval-only", action="store_true", help="no LLM calls: free and fast")
+    p.add_argument("--model", default=None, help="override generation.model")
+    p.add_argument("--judge-model", default=None, help="override evaluation.judge_model")
+    p.add_argument("--limit", type=int, default=None, help="only the first N questions")
+    p.add_argument(
+        "--fail-under-hit",
+        type=float,
+        default=None,
+        help="exit 1 if hit@k is below this (regression gate for CI / schedulers)",
+    )
+    p.set_defaults(func=cmd_evaluate)
 
     p = sub.add_parser("serve", help="start the FastAPI server")
     p.add_argument("--host", default="127.0.0.1")

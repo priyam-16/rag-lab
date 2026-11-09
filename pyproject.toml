@@ -51,6 +51,9 @@ download   = { cmd = "raglab download", help = "Download the default corpus into
 ingest     = { cmd = "raglab ingest --config configs/default.yaml", help = "Parse, chunk, embed, index" }
 ask        = { cmd = "raglab ask", help = "Ask a question: uv run poe ask \"...\"" }
 serve      = { cmd = "raglab serve --reload", help = "Start the API on http://localhost:8000/docs" }
+draft-gold = { cmd = "raglab draft-gold --n 40", help = "LLM-draft 40 gold questions for review (~$0.30)" }
+eval-retrieval = { cmd = "raglab evaluate --retrieval-only", help = "Free retrieval-only score (hit@k, MRR + CIs)" }
+eval       = { cmd = "raglab evaluate", help = "Full score incl. answers + judge (costs API credit)" }
 
 # ---------------------------------------------------------------- tools
 [tool.ruff]
