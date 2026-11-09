@@ -241,6 +241,33 @@ searching only nearby partitions.
 
 ---
 
+## Q11. Combined design — call-centre assistant for a declined card
+> "When a customer calls about a declined card transaction, the assistant should look up the transaction,
+> explain why it was declined (the fraud model flagged it), find what the agent may do next, and suggest a response."
+
+**Trap:** this is mostly *not* RAG. "Why declined" comes from the transaction system and the fraud model;
+RAG only finds the policy for next steps. Answer the design first; evaluation is one section of it.
+
+| Need | Component | Why |
+|---|---|---|
+| Coordinate | Agent orchestrator (LangGraph): fixed steps, branches, stop on edge cases | Several systems in order |
+| Which transaction | Tool: card transaction API (deterministic) | Exact data |
+| Why declined | Tool: fraud model score + **reason codes** (SHAP / rule codes) | Model already decided; we only explain |
+| Next steps | RAG over call-centre policy/scripts, hybrid + metadata filters (card type, region, version, **agent role**) | Changing policy, must cite |
+| Suggested reply | LLM with template, only the facts above | Grounded wording |
+| Decision | Human agent reads/edits/decides | Accountability |
+
+**Controls (the differentiator):** never reveal fraud logic to the customer (it teaches fraudsters) — reason
+codes to the agent only, customer-safe wording suggested; role-based policy filters (e.g. only supervisors lift
+blocks); PII masking; audit (transaction ID, reasons shown, policy chunks, suggestion, action taken); latency
+target ~2–3 s on a live call (parallel lookups, streaming).
+**Evaluation:** policy hit@k; suggestion faithfulness + a "no fraud-logic leakage" check; p95 latency; business:
+average handling time, repeat calls, agent ratings. **Rollout:** 10-agent pilot vs control group.
+**Closing:** "Deterministic tools fetch the transaction and reason codes, RAG finds what the agent may do, the LLM
+drafts a customer-safe reply, the human decides. The key risk is leaking fraud logic, not hallucination."
+
+---
+
 ## Concepts: vector search at scale (drill 2026-11-03/04)
 
 **"Search 100M vectors in 100 ms":** clarify (QPS, recall target, filters, update rate, dims) → math
